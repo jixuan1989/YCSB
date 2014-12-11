@@ -3,8 +3,9 @@ target
 
 # ignore output files from testing
 output*
-
-# ignore standard eclipse
-.project
-.classpath
-.settings
+core/.settings
+cassandra/.settings
+core/.classpath
+core/.project
+cassandra/.classpath
+cassandra/.project
