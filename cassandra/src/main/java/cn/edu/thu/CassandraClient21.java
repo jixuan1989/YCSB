@@ -18,8 +18,10 @@
 package cn.edu.thu;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Collection;
 import java.util.Iterator;
@@ -61,63 +63,57 @@ public class CassandraClient21 extends DB
 	public static final int Ok = 0;
 	public static final int Error = -1;
 	public static final ByteBuffer emptyByteBuffer = ByteBuffer.wrap(new byte[0]);
-
+	
 	public int ConnectionRetries;
 	public int OperationRetries;
 	public String column_family;
-
+	
 	public static final String CONNECTION_RETRY_PROPERTY = "cassandra.connectionretries";
 	public static final String CONNECTION_RETRY_PROPERTY_DEFAULT = "300";
-
+	
 	public static final String OPERATION_RETRY_PROPERTY = "cassandra.operationretries";
 	public static final String OPERATION_RETRY_PROPERTY_DEFAULT = "300";
-
+	
 	public static final String USERNAME_PROPERTY = "cassandra.username";
 	public static final String PASSWORD_PROPERTY = "cassandra.password";
-
+	
 	public static final String COLUMN_FAMILY_PROPERTY = "cassandra.columnfamily";
 	public static final String COLUMN_FAMILY_PROPERTY_DEFAULT = "data";
-
-	public static final String KEYSPACE_PROPERTY="cassandra.keyspace";
-	public static final String KEYSPACE_PROPERTY_DEFAULT="keyspace";
-
+	
+	public static final String KEYSPACE_PROPERTY = "cassandra.keyspace";
+	public static final String KEYSPACE_PROPERTY_DEFAULT = "keyspace";
+	
 	public static final String READ_CONSISTENCY_LEVEL_PROPERTY = "cassandra.readconsistencylevel";
 	public static final String READ_CONSISTENCY_LEVEL_PROPERTY_DEFAULT = "ONE";
-
+	
 	public static final String WRITE_CONSISTENCY_LEVEL_PROPERTY = "cassandra.writeconsistencylevel";
 	public static final String WRITE_CONSISTENCY_LEVEL_PROPERTY_DEFAULT = "ONE";
-
+	
 	public static final String SCAN_CONSISTENCY_LEVEL_PROPERTY = "cassandra.scanconsistencylevel";
 	public static final String SCAN_CONSISTENCY_LEVEL_PROPERTY_DEFAULT = "ONE";
-
+	
 	public static final String DELETE_CONSISTENCY_LEVEL_PROPERTY = "cassandra.deleteconsistencylevel";
 	public static final String DELETE_CONSISTENCY_LEVEL_PROPERTY_DEFAULT = "ONE";
-
-	public static final String TRACING_PROPERTY="cassandra.tracing";
-	public static final String TRACING_PROPERTY_DEFAULT="false";
-
-
+	
+	public static final String TRACING_PROPERTY = "cassandra.tracing";
+	public static final String TRACING_PROPERTY_DEFAULT = "false";
+	
 	private Cluster cluster;
 	private Session session;
-
+	
 	boolean _debug = false;
 	boolean _trace = false;
 	String _table = "";
 	Exception errorexception = null;
-
+	
 	PreparedStatement statement;
-
-	//	List<Mutation> mutations = new ArrayList<Mutation>();
-	//	Map<String, List<Mutation>> mutationMap = new HashMap<String, List<Mutation>>();
-	//	Map<ByteBuffer, Map<String, List<Mutation>>> record = new HashMap<ByteBuffer, Map<String, List<Mutation>>>();
-
-	//	ColumnParent parent;
-
+	
 	ConsistencyLevel readConsistencyLevel = ConsistencyLevel.ONE;
 	ConsistencyLevel writeConsistencyLevel = ConsistencyLevel.ONE;
 	ConsistencyLevel scanConsistencyLevel = ConsistencyLevel.ONE;
 	ConsistencyLevel deleteConsistencyLevel = ConsistencyLevel.ONE;
-	PreparedStatement readStatement,writeStatement,scanStatement,deleteStatement;
+	PreparedStatement readStatement, writeStatement, scanStatement, deleteStatement;
+	
 	/**
 	 * Initialize any state for this DB. Called once per DB instance; there is
 	 * one DB instance per client thread.
@@ -130,45 +126,38 @@ public class CassandraClient21 extends DB
 			throw new DBException("Required property \"hosts\" missing for CassandraClient");
 		}
 		System.out.printf("Hosts : %s\n", hosts);
-
-		column_family = getProperties().getProperty(COLUMN_FAMILY_PROPERTY,
-				COLUMN_FAMILY_PROPERTY_DEFAULT);
-		_table=getProperties().getProperty(KEYSPACE_PROPERTY,KEYSPACE_PROPERTY_DEFAULT);
-		_trace=Boolean.valueOf(getProperties().getProperty(TRACING_PROPERTY,TRACING_PROPERTY_DEFAULT));
-		//		parent = new ColumnParent(column_family);
-
-		ConnectionRetries = Integer.parseInt(getProperties().getProperty(CONNECTION_RETRY_PROPERTY,
-				CONNECTION_RETRY_PROPERTY_DEFAULT));
-		OperationRetries = Integer.parseInt(getProperties().getProperty(OPERATION_RETRY_PROPERTY,
-				OPERATION_RETRY_PROPERTY_DEFAULT));
-
+		
+		column_family = getProperties().getProperty(COLUMN_FAMILY_PROPERTY, COLUMN_FAMILY_PROPERTY_DEFAULT);
+		_table = getProperties().getProperty(KEYSPACE_PROPERTY, KEYSPACE_PROPERTY_DEFAULT);
+		_trace = Boolean.valueOf(getProperties().getProperty(TRACING_PROPERTY, TRACING_PROPERTY_DEFAULT));
+		// parent = new ColumnParent(column_family);
+		
+		ConnectionRetries = Integer.parseInt(getProperties().getProperty(CONNECTION_RETRY_PROPERTY, CONNECTION_RETRY_PROPERTY_DEFAULT));
+		OperationRetries = Integer.parseInt(getProperties().getProperty(OPERATION_RETRY_PROPERTY, OPERATION_RETRY_PROPERTY_DEFAULT));
+		
 		String username = getProperties().getProperty(USERNAME_PROPERTY);
 		String password = getProperties().getProperty(PASSWORD_PROPERTY);
-
-		readConsistencyLevel = ConsistencyLevel.valueOf(getProperties().getProperty(
-				READ_CONSISTENCY_LEVEL_PROPERTY, READ_CONSISTENCY_LEVEL_PROPERTY_DEFAULT));
-		writeConsistencyLevel = ConsistencyLevel.valueOf(getProperties().getProperty(
-				WRITE_CONSISTENCY_LEVEL_PROPERTY, WRITE_CONSISTENCY_LEVEL_PROPERTY_DEFAULT));
-		scanConsistencyLevel = ConsistencyLevel.valueOf(getProperties().getProperty(
-				SCAN_CONSISTENCY_LEVEL_PROPERTY, SCAN_CONSISTENCY_LEVEL_PROPERTY_DEFAULT));
-		deleteConsistencyLevel = ConsistencyLevel.valueOf(getProperties().getProperty(
-				DELETE_CONSISTENCY_LEVEL_PROPERTY, DELETE_CONSISTENCY_LEVEL_PROPERTY_DEFAULT));
-
+		
+		readConsistencyLevel = ConsistencyLevel.valueOf(getProperties().getProperty(READ_CONSISTENCY_LEVEL_PROPERTY, READ_CONSISTENCY_LEVEL_PROPERTY_DEFAULT));
+		writeConsistencyLevel = ConsistencyLevel.valueOf(getProperties().getProperty(WRITE_CONSISTENCY_LEVEL_PROPERTY, WRITE_CONSISTENCY_LEVEL_PROPERTY_DEFAULT));
+		scanConsistencyLevel = ConsistencyLevel.valueOf(getProperties().getProperty(SCAN_CONSISTENCY_LEVEL_PROPERTY, SCAN_CONSISTENCY_LEVEL_PROPERTY_DEFAULT));
+		deleteConsistencyLevel = ConsistencyLevel.valueOf(getProperties().getProperty(DELETE_CONSISTENCY_LEVEL_PROPERTY, DELETE_CONSISTENCY_LEVEL_PROPERTY_DEFAULT));
+		
 		_debug = Boolean.parseBoolean(getProperties().getProperty("debug", "false"));
-
+		
 		String[] allhosts = hosts.split(",");
-		//		String myhost = allhosts[random.nextInt(allhosts.length)];
-
+		// String myhost = allhosts[random.nextInt(allhosts.length)];
+		
 		Exception connectexception = null;
-
+		
 		for (int retry = 0; retry < ConnectionRetries; retry++)
 		{
 			try
 			{
-				//				System.out.printf("Try Connected to : %s\n", myhost);
+				// System.out.printf("Try Connected to : %s\n", myhost);
 				Builder builder = Cluster.builder().addContactPoints(allhosts);
-				//				builder.withLoadBalancingPolicy(new LatencyAwarePolicy());
-				//TODO we can add different loadbalance policy here. 
+				// builder.withLoadBalancingPolicy(new LatencyAwarePolicy());
+				// TODO we can add different loadbalance policy here.
 				if (username != null && password != null)
 				{
 					builder = builder.withCredentials(username, password);
@@ -178,45 +167,48 @@ public class CassandraClient21 extends DB
 				System.out.printf("Connected to cluster: %s\n", metadata.getClusterName());
 				for (Host host : metadata.getAllHosts())
 				{
-					System.out.printf("Datacenter: %s; Host: %s; Rack: %s\n", host.getDatacenter(),
-							host.getAddress(), host.getRack());
+					System.out.printf("Datacenter: %s; Host: %s; Rack: %s\n", host.getDatacenter(), host.getAddress(), host.getRack());
 				}
 			}
 			catch (Exception e)
 			{
 				connectexception = e;
 			}
-			try{
+			try
+			{
 				session = cluster.connect();
 				StringBuilder sb = new StringBuilder();
 				sb.append("SELECT  attribute, value FROM ");
 				sb.append(_table);
 				sb.append(".");
 				sb.append(column_family);
-				sb.append(" WHERE key = ? ");//FIXME we need add "and attribute in (?)" condition. however I do not know how to bind data with boundStatment...
-				readStatement=session.prepare(sb.toString()).setConsistencyLevel(readConsistencyLevel);
+				sb.append(" WHERE key = ? and attribute in ?;");
+				readStatement = session.prepare(sb.toString()).setConsistencyLevel(readConsistencyLevel);
 				sb = new StringBuilder();
 				sb.append("INSERT INTO ");
 				sb.append(_table);
 				sb.append(".");
 				sb.append(column_family);
 				sb.append(" (key, attribute, value) VALUES (?, ?, ?);");
-				writeStatement=session.prepare(sb.toString()).setConsistencyLevel(writeConsistencyLevel);
+				writeStatement = session.prepare(sb.toString()).setConsistencyLevel(writeConsistencyLevel);
 				sb = new StringBuilder();
 				sb.append("DELETE FROM ");
 				sb.append(_table);
 				sb.append(".");
 				sb.append(column_family);
 				sb.append(" WHERE key = ?");
-				deleteStatement=session.prepare(sb.toString()).setConsistencyLevel(deleteConsistencyLevel);
-				if(_trace){
+				deleteStatement = session.prepare(sb.toString()).setConsistencyLevel(deleteConsistencyLevel);
+				if (_trace)
+				{
 					readStatement.enableTracing();
 					writeStatement.enableTracing();
 					deleteStatement.enableTracing();
 				}
 				connectexception = null;
 				break;
-			}catch(Exception e){
+			}
+			catch (Exception e)
+			{
 				System.out.println(e.getMessage());
 				cluster.close();
 			}
@@ -227,16 +219,15 @@ public class CassandraClient21 extends DB
 			catch (InterruptedException e)
 			{
 			}
-
+			
 		}
 		if (connectexception != null)
 		{
-			System.err.println("Unable to connect to cluster after " + ConnectionRetries
-					+ " tries\n"+ connectexception.getMessage());
+			System.err.println("Unable to connect to cluster after " + ConnectionRetries + " tries\n" + connectexception.getMessage());
 			throw new DBException(connectexception);
 		}
 	}
-
+	
 	/**
 	 * Cleanup any state for this DB. Called once per DB instance; there is one
 	 * DB instance per client thread.
@@ -245,12 +236,12 @@ public class CassandraClient21 extends DB
 	{
 		cluster.close();
 	}
-
+	
 	private Session getSession()
 	{
 		return this.session;
 	}
-
+	
 	/**
 	 * Read a record from the database. Each field/value pair from the result
 	 * will be stored in a HashMap.
@@ -265,48 +256,53 @@ public class CassandraClient21 extends DB
 	 *            A HashMap of field/value pairs for the result
 	 * @return Zero on success, a non-zero error code on error
 	 */
-	public int read(String table, String key, Set<String> fields,
-			HashMap<String, ByteIterator> result)
-	{
-
+	public int read(String table, String key, Set<String> fields, HashMap<String, ByteIterator> result)
+	{		
 		for (int i = 0; i < OperationRetries; i++)
 		{
 			try
 			{
-				//FIXME fields are ignored.
-				ResultSet results = session.execute(new BoundStatement(readStatement).bind(key));
-
+				List<String> fieldList;
+				if (fields != null)
+				{
+					fieldList = new ArrayList<String>(fields);
+				}
+				else
+				{
+					fieldList = new ArrayList<String>();
+				}
+				ResultSet results = session.execute(new BoundStatement(readStatement).bind(key, fieldList));
+				
 				if (_debug)
 				{
 					System.out.print("Reading key: " + key);
 				}
-
+				
 				for (Row row : results.all())
 				{
 					String name = row.getString(0);
 					ByteBuffer buffer = row.getBytesUnsafe(1);
-					ByteArrayByteIterator value = new ByteArrayByteIterator(buffer.array(),
-							buffer.position() + buffer.arrayOffset(), buffer.remaining());
+					ByteArrayByteIterator value = new ByteArrayByteIterator(buffer.array(), buffer.position() + buffer.arrayOffset(), buffer.remaining());
 					result.put(name, value);
 					if (_debug)
 					{
 						System.out.print("(" + name + "=" + value + ")");
 					}
 				}
-
+				
 				if (_debug)
 				{
 					System.out.println();
 					System.out.println("ConsistencyLevel=" + readConsistencyLevel.toString());
 				}
-
+				
 				return Ok;
 			}
 			catch (Exception e)
 			{
 				errorexception = e;
 			}
-
+			
 			try
 			{
 				Thread.sleep(500);
@@ -318,9 +314,9 @@ public class CassandraClient21 extends DB
 		errorexception.printStackTrace();
 		errorexception.printStackTrace(System.out);
 		return Error;
-
+		
 	}
-
+	
 	/**
 	 * Read a record from the database. Each field/value pair from the result
 	 * will be stored in a HashMap.
@@ -335,8 +331,7 @@ public class CassandraClient21 extends DB
 	 *            A HashMap of field/value pairs for the result
 	 * @return Zero on success, a non-zero error code on error
 	 */
-	public int read_none_compact_storage(String table, String key, Set<String> fields,
-			HashMap<String, ByteIterator> result)
+	public int read_none_compact_storage(String table, String key, Set<String> fields, HashMap<String, ByteIterator> result)
 	{
 		for (int i = 0; i < OperationRetries; i++)
 		{
@@ -356,18 +351,18 @@ public class CassandraClient21 extends DB
 				sb.append(column_family);
 				sb.append("WHERE key = ");
 				sb.append(key);
-
+				
 				ResultSet results = session.execute(sb.toString());
-
+				
 				// List<ColumnOrSuperColumn> results =
 				// client.get_slice(ByteBuffer.wrap(key.getBytes("UTF-8")),
 				// parent, predicate, readConsistencyLevel);
-
+				
 				if (_debug)
 				{
 					System.out.print("Reading key: " + key);
 				}
-
+				
 				for (Row row : results.all())
 				{
 					int columnCount = row.getColumnDefinitions().size();
@@ -375,30 +370,29 @@ public class CassandraClient21 extends DB
 					{
 						String name = row.getString(j);
 						ByteBuffer buffer = row.getBytes(j);
-						ByteArrayByteIterator value = new ByteArrayByteIterator(buffer.array(),
-								buffer.position() + buffer.arrayOffset(), buffer.remaining());
+						ByteArrayByteIterator value = new ByteArrayByteIterator(buffer.array(), buffer.position() + buffer.arrayOffset(), buffer.remaining());
 						result.put(name, value);
-
+						
 						if (_debug)
 						{
 							System.out.print("(" + name + "=" + value + ")");
 						}
 					}
 				}
-
+				
 				if (_debug)
 				{
 					System.out.println();
 					System.out.println("ConsistencyLevel=" + readConsistencyLevel.toString());
 				}
-
+				
 				return Ok;
 			}
 			catch (Exception e)
 			{
 				errorexception = e;
 			}
-
+			
 			try
 			{
 				Thread.sleep(500);
@@ -410,9 +404,9 @@ public class CassandraClient21 extends DB
 		errorexception.printStackTrace();
 		errorexception.printStackTrace(System.out);
 		return Error;
-
+		
 	}
-
+	
 	/**
 	 * Perform a range scan for a set of records in the database. Each
 	 * field/value pair from the result will be stored in a HashMap.
@@ -430,15 +424,14 @@ public class CassandraClient21 extends DB
 	 *            pairs for one record
 	 * @return Zero on success, a non-zero error code on error
 	 */
-	public int scan(String table, String startkey, int recordcount, Set<String> fields,
-			Vector<HashMap<String, ByteIterator>> result)
+	public int scan(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result)
 	{
 		if (!_table.equals(table))
 		{
 			try
 			{
 				// client.set_keyspace(table);
-				//TODO
+				// TODO
 				_table = table;
 			}
 			catch (Exception e)
@@ -448,12 +441,12 @@ public class CassandraClient21 extends DB
 				return Error;
 			}
 		}
-
+		
 		for (int i = 0; i < OperationRetries; i++)
 		{
 			try
 			{
-
+				
 				return Ok;
 			}
 			catch (Exception e)
@@ -472,7 +465,7 @@ public class CassandraClient21 extends DB
 		errorexception.printStackTrace(System.out);
 		return Error;
 	}
-
+	
 	/**
 	 * Update a record in the database. Any field/value pairs in the specified
 	 * values HashMap will be written into the record with the specified record
@@ -490,7 +483,7 @@ public class CassandraClient21 extends DB
 	{
 		return insert(table, key, values);
 	}
-
+	
 	/**
 	 * Insert a record in the database. Any field/value pairs in the specified
 	 * values HashMap will be written into the record with the specified record
@@ -505,8 +498,7 @@ public class CassandraClient21 extends DB
 	 * @return Zero on success, a non-zero error code on error
 	 */
 	public int insert(String table, String key, HashMap<String, ByteIterator> values)
-	{
-
+	{		
 		if (!_table.equals(table))
 		{
 			try
@@ -518,11 +510,12 @@ public class CassandraClient21 extends DB
 				sb.append(column_family);
 				sb.append(" (key, attribute, value) VALUES (?, ?, ?);");
 				writeStatement = getSession().prepare(sb.toString()).setConsistencyLevel(writeConsistencyLevel);
-				if(_trace){
+				if (_trace)
+				{
 					writeStatement.enableTracing();
 				}
 				_table = table;
-
+				
 			}
 			catch (Exception e)
 			{
@@ -531,8 +524,6 @@ public class CassandraClient21 extends DB
 				return Error;
 			}
 		}
-		BoundStatement boundStatement = new BoundStatement(writeStatement);
-
 		for (int i = 0; i < OperationRetries; i++)
 		{
 			if (_debug)
@@ -544,10 +535,9 @@ public class CassandraClient21 extends DB
 				BatchStatement batch = new BatchStatement();
 				for (Entry<String, ByteIterator> entry : values.entrySet())
 				{
-					batch.add(boundStatement.bind(key, entry.getKey(), entry.getValue().toString()));
+					batch.add(writeStatement.bind(key, entry.getKey(), entry.getValue().toString()));
 				}
-				// client.batch_mutate(record, ConsistencyLevel.ONE);
-				getSession().execute(boundStatement);
+				getSession().execute(batch);
 				if (_debug)
 				{
 					System.out.println("ConsistencyLevel=" + writeConsistencyLevel.toString());
@@ -570,7 +560,7 @@ public class CassandraClient21 extends DB
 		errorexception.printStackTrace(System.out);
 		return Error;
 	}
-
+	
 	/**
 	 * Insert a record in the database. Any field/value pairs in the specified
 	 * values HashMap will be written into the record with the specified record
@@ -584,8 +574,7 @@ public class CassandraClient21 extends DB
 	 *            A HashMap of field/value pairs to insert in the record
 	 * @return Zero on success, a non-zero error code on error
 	 */
-	public int insert_none_compact_storage(String table, String key,
-			HashMap<String, ByteIterator> values)
+	public int insert_none_compact_storage(String table, String key, HashMap<String, ByteIterator> values)
 	{
 		if (!_table.equals(table))
 		{
@@ -603,12 +592,12 @@ public class CassandraClient21 extends DB
 					sb.append(columnName);
 				}
 				sb.append(") VALUES (?");
-
+				
 				for (int i = 0; i < values.keySet().size(); i++)
 				{
 					sb.append(", ?");
 				}
-
+				
 				sb.append(");");
 				statement = getSession().prepare(sb.toString());
 				_table = table;
@@ -620,7 +609,7 @@ public class CassandraClient21 extends DB
 				return Error;
 			}
 		}
-
+		
 		BoundStatement boundStatement = new BoundStatement(statement);
 		for (int i = 0; i < OperationRetries; i++)
 		{
@@ -654,7 +643,7 @@ public class CassandraClient21 extends DB
 		errorexception.printStackTrace(System.out);
 		return Error;
 	}
-
+	
 	/**
 	 * Delete a record from the database.
 	 * 
@@ -670,15 +659,15 @@ public class CassandraClient21 extends DB
 		{
 			try
 			{
-			
+				
 				getSession().execute(new BoundStatement(deleteStatement).bind(key));
-
+				
 				if (_debug)
 				{
 					System.out.println("Delete key: " + key);
 					System.out.println("ConsistencyLevel=" + deleteConsistencyLevel.toString());
 				}
-
+				
 				return Ok;
 			}
 			catch (Exception e)
@@ -697,23 +686,23 @@ public class CassandraClient21 extends DB
 		errorexception.printStackTrace(System.out);
 		return Error;
 	}
-
+	
 	public static void main(String[] args)
 	{
 		
 		System.out.printf("Start test...\n");
-		for(ConsistencyLevel level:ConsistencyLevel.values())
-			System.out.println(level.name());	
+		for (ConsistencyLevel level : ConsistencyLevel.values())
+			System.out.println(level.name());
 		CassandraClient21 cli = new CassandraClient21();
-
+		
 		Properties props = new Properties();
-
+		
 		props.setProperty("hosts", args[0]);
 		props.setProperty(COLUMN_FAMILY_PROPERTY, "testcf");
 		props.setProperty(KEYSPACE_PROPERTY, "testks");
 		props.setProperty(TRACING_PROPERTY, "true");
 		cli.setProperties(props);
-
+		
 		try
 		{
 			cli.init();
@@ -723,14 +712,14 @@ public class CassandraClient21 extends DB
 			e.printStackTrace();
 			System.exit(0);
 		}
-
+		
 		HashMap<String, ByteIterator> vals = new HashMap<String, ByteIterator>();
 		vals.put("age", new StringByteIterator("57"));
 		vals.put("middlename", new StringByteIterator("bradley"));
 		vals.put("favoritecolor", new StringByteIterator("blue"));
 		int res = cli.insert("testks", "BrianFrankCooper", vals);
 		System.out.println("Result of insert: " + res);
-
+		
 		HashMap<String, ByteIterator> result = new HashMap<String, ByteIterator>();
 		HashSet<String> fields = new HashSet<String>();
 		fields.add("middlename");
@@ -742,13 +731,15 @@ public class CassandraClient21 extends DB
 		{
 			System.out.println("[" + s + "]=[" + result.get(s) + "]");
 		}
-
+		
 		res = cli.delete("test", "BrianFrankCooper");
 		System.out.println("Result of delete: " + res);
-		try {
+		try
+		{
 			cli.cleanup();
-		} catch (DBException e) {
-			// TODO Auto-generated catch block
+		}
+		catch (DBException e)
+		{
 			e.printStackTrace();
 		}
 	}
