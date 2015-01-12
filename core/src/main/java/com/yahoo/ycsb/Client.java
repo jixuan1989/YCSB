@@ -46,7 +46,7 @@ class StatusThread extends Thread
 	Vector<Thread> _threads;
 	String _label;
 	boolean _standardstatus;
-	
+
 	/**
 	 * The interval for reporting status.
 	 */
@@ -68,10 +68,10 @@ class StatusThread extends Thread
 
 		long lasten=st;
 		long lasttotalops=0;
-		
+
 		boolean alldone;
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
-		
+
 		do 
 		{
 			alldone=true;
@@ -96,13 +96,13 @@ class StatusThread extends Thread
 			//double throughput=1000.0*((double)totalops)/((double)interval);
 
 			double curthroughput=1000.0*(((double)(totalops-lasttotalops))/((double)(en-lasten)));
-			
+
 			lasttotalops=totalops;
 			lasten=en;
-			
+
 			DecimalFormat d = new DecimalFormat("#.##");
 			String label = _label + format.format(new Date());
-			
+
 			if (totalops==0)
 			{
 				System.err.println(label+ " " +(interval/1000)+" sec: "+totalops+" operations; "+Measurements.getMeasurements().getSummary());
@@ -114,13 +114,13 @@ class StatusThread extends Thread
 
 			if (_standardstatus)
 			{
-			if (totalops==0)
-			{
-				System.out.println(label+" "+(interval/1000)+" sec: "+totalops+" operations; "+Measurements.getMeasurements().getSummary());
-			}
-			else
-			{
-				System.out.println(label+" "+(interval/1000)+" sec: "+totalops+" operations; "+d.format(curthroughput)+" current ops/sec; "+Measurements.getMeasurements().getSummary());			}
+				if (totalops==0)
+				{
+					System.out.println(label+" "+(interval/1000)+" sec: "+totalops+" operations; "+Measurements.getMeasurements().getSummary());
+				}
+				else
+				{
+					System.out.println(label+" "+(interval/1000)+" sec: "+totalops+" operations; "+d.format(curthroughput)+" current ops/sec; "+Measurements.getMeasurements().getSummary());			}
 			}
 
 			try
@@ -145,6 +145,13 @@ class StatusThread extends Thread
  */
 class ClientThread extends Thread
 {
+	boolean inited=false;
+	public synchronized boolean isInited(){
+		return inited;
+	}
+	public synchronized void setInited(boolean init){
+		this.inited=init;
+	}
 	DB _db;
 	boolean _dotransactions;
 	Workload _workload;
@@ -206,6 +213,7 @@ class ClientThread extends Thread
 		try
 		{
 			_workloadstate=_workload.initThread(_props,_threadid,_threadcount);
+			this.setInited(true);
 		}
 		catch (WorkloadException e)
 		{
@@ -213,22 +221,32 @@ class ClientThread extends Thread
 			e.printStackTrace(System.out);
 			return;
 		}
+		if(!Client.isBeginToOperate()){
+			System.out.println(this._threadid+" wait for other ClientThread init...");
+		}
+		while(!Client.isBeginToOperate()){
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 
 		//spread the thread operations out so they don't all hit the DB at the same time
 		try
 		{
-		   //GH issue 4 - throws exception if _target>1 because random.nextInt argument must be >0
-		   //and the sleep() doesn't make sense for granularities < 1 ms anyway
-		   if ( (_target>0) && (_target<=1.0) ) 
-		   {
-		      sleep(Utils.random().nextInt((int)(1.0/_target)));
-		   }
+			//GH issue 4 - throws exception if _target>1 because random.nextInt argument must be >0
+			//and the sleep() doesn't make sense for granularities < 1 ms anyway
+			if ( (_target>0) && (_target<=1.0) ) 
+			{
+				sleep(Utils.random().nextInt((int)(1.0/_target)));
+			}
 		}
 		catch (InterruptedException e)
 		{
-		  // do nothing.
+			// do nothing.
 		}
-		
+
 		try
 		{
 			if (_dotransactions)
@@ -260,7 +278,7 @@ class ClientThread extends Thread
 							}
 							catch (InterruptedException e)
 							{
-							  // do nothing.
+								// do nothing.
 							}
 
 						}
@@ -296,7 +314,7 @@ class ClientThread extends Thread
 							}
 							catch (InterruptedException e)
 							{
-							  // do nothing.
+								// do nothing.
 							}
 						}
 					}
@@ -328,24 +346,31 @@ class ClientThread extends Thread
  */
 public class Client
 {
-
+	// for omit ThreadClient.init() time
+	private static boolean beginToOperate=false;
+	public static synchronized boolean isBeginToOperate(){
+		return beginToOperate;
+	}
+	public static synchronized void setBeginToOperate(boolean be){
+		beginToOperate=be;
+	}
 	public static final String OPERATION_COUNT_PROPERTY="operationcount";
 
 	public static final String RECORD_COUNT_PROPERTY="recordcount";
 
 	public static final String WORKLOAD_PROPERTY="workload";
-	
+
 	/**
 	 * Indicates how many inserts to do, if less than recordcount. Useful for partitioning
 	 * the load among multiple servers, if the client is the bottleneck. Additionally, workloads
 	 * should support the "insertstart" property, which tells them which record to start at.
 	 */
 	public static final String INSERT_COUNT_PROPERTY="insertcount";
-	
+
 	/**
-   * The maximum amount of time (in seconds) for which the benchmark will be run.
-   */
-  public static final String MAX_EXECUTION_TIME = "maxexecutiontime";
+	 * The maximum amount of time (in seconds) for which the benchmark will be run.
+	 */
+	public static final String MAX_EXECUTION_TIME = "maxexecutiontime";
 
 	public static void usageMessage()
 	{
@@ -435,7 +460,7 @@ public class Client
 			}
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args)
 	{
@@ -545,9 +570,9 @@ public class Client
 				//Issue #5 - remove call to stringPropertyNames to make compilable under Java 1.5
 				for (Enumeration e=myfileprops.propertyNames(); e.hasMoreElements(); )
 				{
-				   String prop=(String)e.nextElement();
-				   
-				   fileprops.setProperty(prop,myfileprops.getProperty(prop));
+					String prop=(String)e.nextElement();
+
+					fileprops.setProperty(prop,myfileprops.getProperty(prop));
 				}
 
 			}
@@ -599,9 +624,9 @@ public class Client
 		//Issue #5 - remove call to stringPropertyNames to make compilable under Java 1.5
 		for (Enumeration e=props.propertyNames(); e.hasMoreElements(); )
 		{
-		   String prop=(String)e.nextElement();
-		   
-		   fileprops.setProperty(prop,props.getProperty(prop));
+			String prop=(String)e.nextElement();
+
+			fileprops.setProperty(prop,props.getProperty(prop));
 		}
 
 		props=fileprops;
@@ -610,14 +635,14 @@ public class Client
 		{
 			System.exit(0);
 		}
-		
+
 		long maxExecutionTime = Integer.parseInt(props.getProperty(MAX_EXECUTION_TIME, "0"));
 
 		//get number of threads, target and db
 		threadcount=Integer.parseInt(props.getProperty("threadcount","1"));
 		dbname=props.getProperty("db","com.yahoo.ycsb.BasicDB");
 		target=Integer.parseInt(props.getProperty("target","0"));
-		
+
 		//compute the target throughput
 		double targetperthreadperms=-1;
 		if (target>0)
@@ -634,7 +659,7 @@ public class Client
 		}
 		System.out.println();
 		System.err.println("Loading workload...");
-		
+
 		//show a warning message that creating the workload is taking a while
 		//but only do so if it is taking longer than 2 seconds 
 		//(showing the message right away if the setup wasn't taking very long was confusing people)
@@ -655,10 +680,10 @@ public class Client
 		};
 
 		warningthread.start();
-		
+
 		//set up measurements
 		Measurements.setProperties(props);
-		
+
 		//load the workload
 		ClassLoader classLoader = Client.class.getClassLoader();
 
@@ -687,7 +712,7 @@ public class Client
 			e.printStackTrace(System.out);
 			System.exit(0);
 		}
-		
+
 		warningthread.interrupt();
 
 		//run the workload
@@ -745,21 +770,36 @@ public class Client
 			statusthread.start();
 		}
 
-		long st=System.currentTimeMillis();
+//		long st=System.currentTimeMillis();
 
 		for (Thread t : threads)
 		{
 			t.start();
 		}
+		int sumInited=0;
+		while(!isBeginToOperate()){
+			sumInited=0;
+			for (Thread t : threads)
+			{
+				if(((ClientThread)t).isInited()){
+					sumInited++;
+				}
+			}	
+			if(sumInited==threadcount){
+				setBeginToOperate(true);
+			}
+		}
+		System.out.println("all the ClientThreads have inited..");
+		long st=System.currentTimeMillis();
 		
-    Thread terminator = null;
-    
-    if (maxExecutionTime > 0) {
-      terminator = new TerminatorThread(maxExecutionTime, threads, workload);
-      terminator.start();
-    }
-    
-    int opsDone = 0;
+		Thread terminator = null;
+
+		if (maxExecutionTime > 0) {
+			terminator = new TerminatorThread(maxExecutionTime, threads, workload);
+			terminator.start();
+		}
+
+		int opsDone = 0;
 
 		for (Thread t : threads)
 		{
@@ -774,10 +814,10 @@ public class Client
 		}
 
 		long en=System.currentTimeMillis();
-		
+
 		if (terminator != null && !terminator.isInterrupted()) {
-      terminator.interrupt();
-    }
+			terminator.interrupt();
+		}
 
 		if (status)
 		{
