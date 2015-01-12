@@ -20,7 +20,7 @@ import com.datastax.driver.core.Session;
 public class Cassandra21 {
 
 	public static void main(String args[]){
-		String[] hosts=new String[]{"192.168.3.203","192.168.3.204"};
+		String[] hosts=new String[]{"192.168.3.211","192.168.3.212"};
 		Builder builder = Cluster.builder().addContactPoints(hosts);
 		String username="", password="";
 		if (username != null && password != null)
