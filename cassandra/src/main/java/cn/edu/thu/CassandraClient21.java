@@ -98,11 +98,16 @@ public class CassandraClient21 extends DB
 	public static final String TRACING_PROPERTY = "cassandra.tracing";
 	public static final String TRACING_PROPERTY_DEFAULT = "false";
 	
+	
+	public static final String EXECUTE_ASYNC="cassandra.async";
+	public static final String EXECUTE_ASYNC_DEFAULT="false";
+	
 	private Cluster cluster;
 	private Session session;
 	
 	boolean _debug = false;
 	boolean _trace = false;
+	boolean _async = false;
 	String _table = "";
 	Exception errorexception = null;
 	
@@ -125,12 +130,13 @@ public class CassandraClient21 extends DB
 		{
 			throw new DBException("Required property \"hosts\" missing for CassandraClient");
 		}
-		System.out.printf("Hosts : %s\n", hosts);
+//		System.out.printf("Hosts : %s\n", hosts);
 		
 		column_family = getProperties().getProperty(COLUMN_FAMILY_PROPERTY, COLUMN_FAMILY_PROPERTY_DEFAULT);
 		_table = getProperties().getProperty(KEYSPACE_PROPERTY, KEYSPACE_PROPERTY_DEFAULT);
 		_trace = Boolean.valueOf(getProperties().getProperty(TRACING_PROPERTY, TRACING_PROPERTY_DEFAULT));
 		// parent = new ColumnParent(column_family);
+		_async=Boolean.valueOf(getProperties().getProperty(EXECUTE_ASYNC,EXECUTE_ASYNC_DEFAULT));
 		
 		ConnectionRetries = Integer.parseInt(getProperties().getProperty(CONNECTION_RETRY_PROPERTY, CONNECTION_RETRY_PROPERTY_DEFAULT));
 		OperationRetries = Integer.parseInt(getProperties().getProperty(OPERATION_RETRY_PROPERTY, OPERATION_RETRY_PROPERTY_DEFAULT));
@@ -165,10 +171,10 @@ public class CassandraClient21 extends DB
 				cluster = builder.build();
 				Metadata metadata = cluster.getMetadata();
 				System.out.printf("Connected to cluster: %s\n", metadata.getClusterName());
-				for (Host host : metadata.getAllHosts())
-				{
-					System.out.printf("Datacenter: %s; Host: %s; Rack: %s\n", host.getDatacenter(), host.getAddress(), host.getRack());
-				}
+//				for (Host host : metadata.getAllHosts())
+//				{
+//					System.out.printf("Datacenter: %s; Host: %s; Rack: %s\n", host.getDatacenter(), host.getAddress(), host.getRack());
+//				}
 			}
 			catch (Exception e)
 			{
@@ -537,7 +543,12 @@ public class CassandraClient21 extends DB
 				{
 					batch.add(writeStatement.bind(key, entry.getKey(), entry.getValue().toString()));
 				}
-				getSession().execute(batch);
+				if(_async){
+					//change execute to executeAsync. Notice: this will make the latency incorrect.
+					getSession().executeAsync(batch);
+				}else{
+					getSession().execute(batch);
+				}
 				if (_debug)
 				{
 					System.out.println("ConsistencyLevel=" + writeConsistencyLevel.toString());
@@ -699,8 +710,8 @@ public class CassandraClient21 extends DB
 		
 		props.setProperty("hosts", args[0]);
 		props.setProperty(COLUMN_FAMILY_PROPERTY, "testcf");
-		props.setProperty(KEYSPACE_PROPERTY, "testks");
-		props.setProperty(TRACING_PROPERTY, "true");
+		props.setProperty(KEYSPACE_PROPERTY, "ycsbtest2");
+		props.setProperty(TRACING_PROPERTY, "false");
 		cli.setProperties(props);
 		
 		try
