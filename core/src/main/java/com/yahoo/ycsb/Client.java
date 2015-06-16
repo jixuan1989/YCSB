@@ -417,7 +417,7 @@ public class Client
 	 * loaded from conf.
 	 * @throws IOException Either failed to write to output stream or failed to close it.
 	 */
-	private static void exportMeasurements(Properties props, int opcount, long runtime)
+	 static void exportMeasurements(Properties props, int opcount, long runtime)
 			throws IOException
 	{
 		MeasurementsExporter exporter = null;

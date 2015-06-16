@@ -36,3 +36,8 @@ Getting Started
 
   See https://github.com/brianfrankcooper/YCSB/wiki/Core-Properties for 
   the list of available workload properties.
+
+##additional
+1. mvn package
+2. bin/run cassandra-20 -P ycsb.proporties
+3. if you want to deploy the project, copy the following folder in one folder: bin core cassandra. 

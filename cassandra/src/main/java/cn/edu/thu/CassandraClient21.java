@@ -80,7 +80,7 @@ public class CassandraClient21 extends DB
 	public static final String COLUMN_FAMILY_PROPERTY = "cassandra.columnfamily";
 	public static final String COLUMN_FAMILY_PROPERTY_DEFAULT = "data";
 	
-	public static final String KEYSPACE_PROPERTY = "cassandra.keyspace";
+	public static final String KEYSPACE_PROPERTY = "table";
 	public static final String KEYSPACE_PROPERTY_DEFAULT = "keyspace";
 	
 	public static final String READ_CONSISTENCY_LEVEL_PROPERTY = "cassandra.readconsistencylevel";
@@ -241,6 +241,7 @@ public class CassandraClient21 extends DB
 	public void cleanup() throws DBException
 	{
 		cluster.close();
+		System.out.println(Thread.currentThread().getId()+" closed.");
 	}
 	
 	private Session getSession()
