@@ -21,7 +21,7 @@ LICENSE file.
 
   <groupId>com.yahoo.ycsb</groupId>
   <artifactId>root</artifactId>
-  <version>0.12.0-SNAPSHOT</version>
+  <version>0.13.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>YCSB Root</name>
@@ -38,9 +38,9 @@ LICENSE file.
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>checkstyle</groupId>
+        <groupId>com.puppycrawl.tools</groupId>
         <artifactId>checkstyle</artifactId>
-        <version>5.0</version>
+        <version>7.7.1</version>
       </dependency>
       <dependency>
         <groupId>org.jdom</groupId>
@@ -72,17 +72,19 @@ LICENSE file.
     <hbase094.version>0.94.27</hbase094.version>
     <hbase098.version>0.98.14-hadoop2</hbase098.version>
     <hbase10.version>1.0.2</hbase10.version>
+    <hbase12.version>1.2.5</hbase12.version>
     <accumulo.version>1.6.0</accumulo.version>
     <cassandra.cql.version>3.0.0</cassandra.cql.version>
     <geode.version>1.0.0-incubating.M3</geode.version>
+    <azuredocumentdb.version>1.8.1</azuredocumentdb.version>
     <googlebigtable.version>0.2.3</googlebigtable.version>
     <infinispan.version>7.2.2.Final</infinispan.version>
-    <kudu.version>0.9.0</kudu.version>
+    <kudu.version>1.1.0</kudu.version>
     <openjpa.jdbc.version>2.1.1</openjpa.jdbc.version>
     <!--<mapkeeper.version>1.0</mapkeeper.version>-->
     <mongodb.version>3.0.3</mongodb.version>
     <mongodb.async.version>2.0.1</mongodb.async.version>
-    <orientdb.version>2.1.8</orientdb.version>
+    <orientdb.version>2.2.10</orientdb.version>
     <redis.version>2.0.0</redis.version>
     <s3.version>1.10.20</s3.version>
     <voldemort.version>0.81</voldemort.version>
@@ -94,8 +96,12 @@ LICENSE file.
     <tarantool.version>1.6.5</tarantool.version>
     <riak.version>2.0.5</riak.version>
     <aerospike.version>3.1.2</aerospike.version>
-    <solr.version>5.4.0</solr.version>
+    <solr.version>5.5.3</solr.version>
+    <solr6.version>6.4.1</solr6.version>
     <arangodb.version>2.7.3</arangodb.version>
+    <arangodb3.version>4.1.7</arangodb3.version>
+    <azurestorage.version>4.0.0</azurestorage.version>
+    <cloudspanner.version>0.9.3-beta</cloudspanner.version>
   </properties>
 
   <modules>
@@ -106,11 +112,15 @@ LICENSE file.
     <module>accumulo</module>
     <module>aerospike</module>
     <module>arangodb</module>
+    <module>arangodb3</module>
     <module>asynchbase</module>
+    <module>azuretablestorage</module>
     <module>cassandra</module>
+    <module>cloudspanner</module>
     <module>couchbase</module>
     <module>couchbase2</module>
     <module>distribution</module>
+    <module>azuredocumentdb</module>
     <module>dynamodb</module>
     <module>elasticsearch</module>
     <module>geode</module>
@@ -119,6 +129,7 @@ LICENSE file.
     <module>hbase094</module>
     <module>hbase098</module>
     <module>hbase10</module>
+    <module>hbase12</module>
     <module>hypertable</module>
     <module>infinispan</module>
     <module>jdbc</module>
@@ -130,9 +141,11 @@ LICENSE file.
     <module>orientdb</module>
     <module>rados</module>
     <module>redis</module>
+    <module>rest</module>
     <module>riak</module>
     <module>s3</module>
     <module>solr</module>
+    <module>solr6</module>
     <module>tarantool</module>
     <!--<module>voldemort</module>-->
   </modules>
@@ -143,7 +156,7 @@ LICENSE file.
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>2.15</version>
+          <version>2.16</version>
         </plugin>
       </plugins>
     </pluginManagement>

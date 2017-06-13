@@ -15,7 +15,7 @@
  * LICENSE file.
  */
 
-package com.yahoo.ycsb.db;
+package com.yahoo.ycsb.db.solr;
 
 import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.DB;
@@ -25,7 +25,9 @@ import com.yahoo.ycsb.StringByteIterator;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
+import org.apache.solr.client.solrj.impl.HttpClientUtil;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.impl.Krb5HttpClientConfigurer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -34,12 +36,8 @@ import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.Vector;
 
 /**
  * Solr client for YCSB framework.
@@ -74,6 +72,13 @@ public class SolrClient extends DB {
     commitTime = Integer
         .parseInt(props.getProperty("solr.commit.within.time", DEFAULT_COMMIT_WITHIN_TIME));
     batchMode = Boolean.parseBoolean(props.getProperty("solr.batch.mode", DEFAULT_BATCH_MODE));
+
+
+    String jaasConfPath = props.getProperty("solr.jaas.conf.path");
+    if(jaasConfPath != null) {
+      System.setProperty("java.security.auth.login.config", jaasConfPath);
+      HttpClientUtil.setConfigurer(new Krb5HttpClientConfigurer());
+    }
 
     // Check if Solr cluster is running in SolrCloud or Stand-alone mode
     Boolean cloudMode = Boolean.parseBoolean(props.getProperty("solr.cloud", DEFAULT_CLOUD_MODE));

@@ -54,6 +54,9 @@ import java.util.Set;
  * Integration tests for the Cassandra client
  */
 public class CassandraCQLClientTest {
+  // Change the default Cassandra timeout from 10s to 120s for slow CI machines
+  private final static long timeout = 120000L;
+
   private final static String TABLE = "usertable";
   private final static String HOST = "localhost";
   private final static int PORT = 9142;
@@ -63,7 +66,8 @@ public class CassandraCQLClientTest {
   private Session session;
 
   @ClassRule
-  public static CassandraCQLUnit cassandraUnit = new CassandraCQLUnit(new ClassPathCQLDataSet("ycsb.cql", "ycsb"));
+  public static CassandraCQLUnit cassandraUnit = new CassandraCQLUnit(
+    new ClassPathCQLDataSet("ycsb.cql", "ycsb"), null, timeout);
 
   @Before
   public void setUp() throws Exception {
@@ -122,7 +126,7 @@ public class CassandraCQLClientTest {
     insertRow();
 
     final HashMap<String, ByteIterator> result = new HashMap<String, ByteIterator>();
-    final Status status = client.read(CoreWorkload.table, DEFAULT_ROW_KEY, null, result);
+    final Status status = client.read(TABLE, DEFAULT_ROW_KEY, null, result);
     assertThat(status, is(Status.OK));
     assertThat(result.entrySet(), hasSize(11));
     assertThat(result, hasEntry("field2", null));
@@ -143,7 +147,7 @@ public class CassandraCQLClientTest {
     insertRow();
     final HashMap<String, ByteIterator> result = new HashMap<String, ByteIterator>();
     final Set<String> fields = Sets.newHashSet("field1");
-    final Status status = client.read(CoreWorkload.table, DEFAULT_ROW_KEY, fields, result);
+    final Status status = client.read(TABLE, DEFAULT_ROW_KEY, fields, result);
     assertThat(status, is(Status.OK));
     assertThat(result.entrySet(), hasSize(1));
     final Map<String, String> strResult = StringByteIterator.getStringMap(result);
