@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2010 Yahoo! Inc., Copyright (c) 2016 YCSB contributors. All rights reserved.
- *
+ * Copyright (c) 2010 Yahoo! Inc., Copyright (c) 2016-2017 YCSB contributors. All rights reserved.
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License. You
  * may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -17,39 +17,19 @@
 
 package com.yahoo.ycsb.workloads;
 
-import java.util.Properties;
-
 import com.yahoo.ycsb.*;
-import com.yahoo.ycsb.generator.AcknowledgedCounterGenerator;
-import com.yahoo.ycsb.generator.ConstantIntegerGenerator;
-import com.yahoo.ycsb.generator.CounterGenerator;
-import com.yahoo.ycsb.generator.DiscreteGenerator;
-import com.yahoo.ycsb.generator.ExponentialGenerator;
-import com.yahoo.ycsb.generator.HistogramGenerator;
-import com.yahoo.ycsb.generator.HotspotIntegerGenerator;
-import com.yahoo.ycsb.generator.NumberGenerator;
-import com.yahoo.ycsb.generator.ScrambledZipfianGenerator;
-import com.yahoo.ycsb.generator.SequentialGenerator;
-import com.yahoo.ycsb.generator.SkewedLatestGenerator;
-import com.yahoo.ycsb.generator.UniformIntegerGenerator;
-import com.yahoo.ycsb.generator.ZipfianGenerator;
+import com.yahoo.ycsb.generator.*;
+import com.yahoo.ycsb.generator.UniformLongGenerator;
 import com.yahoo.ycsb.measurements.Measurements;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Vector;
-
+import java.util.*;
 
 /**
  * The core benchmark scenario. Represents a set of clients doing simple CRUD operations. The
  * relative proportion of different kinds of operations, and other properties of the workload,
  * are controlled by parameters specified at runtime.
- *
+ * <p>
  * Properties to control the client:
  * <UL>
  * <LI><b>fieldcount</b>: the number of fields in a record (default: 10)
@@ -75,7 +55,7 @@ import java.util.Vector;
  * <LI><b>zeropadding</b>: for generating a record sequence compatible with string sort order by
  * 0 padding the record number. Controls the number of 0s to use for padding. (default: 1)
  * For example for row 5, with zeropadding=1 you get 'user5' key and with zeropading=8 you get
- * 'user00000005' key. In order to see its impact, zeropadding needs to be bigger than number of 
+ * 'user00000005' key. In order to see its impact, zeropadding needs to be bigger than number of
  * digits in the record number.
  * <LI><b>insertorder</b>: should records be inserted in order by key ("ordered"), or in hashed
  * order ("hashed") (default: hashed)
@@ -92,8 +72,7 @@ public class CoreWorkload extends Workload {
    */
   public static final String TABLENAME_PROPERTY_DEFAULT = "usertable";
 
-  public static String table;
-
+  protected String table;
 
   /**
    * The name of the property for the number of fields in a record.
@@ -104,15 +83,13 @@ public class CoreWorkload extends Workload {
    * Default number of fields in a record.
    */
   public static final String FIELD_COUNT_PROPERTY_DEFAULT = "10";
-
-  int fieldcount;
-
+  
   private List<String> fieldnames;
 
   /**
    * The name of the property for the field length distribution. Options are "uniform", "zipfian"
    * (favouring short records), "constant", and "histogram".
-   *
+   * <p>
    * If "uniform", "zipfian" or "constant", the maximum field length will be that specified by the
    * fieldlength property. If "histogram", then the histogram will be read from the filename
    * specified in the "fieldlengthhistogram" property.
@@ -149,7 +126,7 @@ public class CoreWorkload extends Workload {
    * Generator object that produces field lengths.  The value of this depends on the properties that
    * start with "FIELD_LENGTH_".
    */
-  NumberGenerator fieldlengthgenerator;
+  protected NumberGenerator fieldlengthgenerator;
 
   /**
    * The name of the property for deciding whether to read one field (false) or all fields (true) of
@@ -162,7 +139,7 @@ public class CoreWorkload extends Workload {
    */
   public static final String READ_ALL_FIELDS_PROPERTY_DEFAULT = "true";
 
-  boolean readallfields;
+  protected boolean readallfields;
 
   /**
    * The name of the property for deciding whether to write one field (false) or all fields (true)
@@ -175,8 +152,7 @@ public class CoreWorkload extends Workload {
    */
   public static final String WRITE_ALL_FIELDS_PROPERTY_DEFAULT = "false";
 
-  boolean writeallfields;
-
+  protected boolean writeallfields;
 
   /**
    * The name of the property for deciding whether to check all returned
@@ -256,7 +232,7 @@ public class CoreWorkload extends Workload {
    */
   public static final String REQUEST_DISTRIBUTION_PROPERTY_DEFAULT = "uniform";
 
-   /**
+  /**
    * The name of the property for adding zero padding to record numbers in order to match
    * string sort order. Controls the number of 0s to left pad with.
    */
@@ -267,7 +243,7 @@ public class CoreWorkload extends Workload {
    */
   public static final String ZERO_PADDING_PROPERTY_DEFAULT = "1";
 
-  
+
   /**
    * The name of the property for the max scan length (number of records).
    */
@@ -331,27 +307,20 @@ public class CoreWorkload extends Workload {
   public static final String INSERTION_RETRY_INTERVAL = "core_workload_insertion_retry_interval";
   public static final String INSERTION_RETRY_INTERVAL_DEFAULT = "3";
 
-  NumberGenerator keysequence;
+  protected NumberGenerator keysequence;
+  protected DiscreteGenerator operationchooser;
+  protected NumberGenerator keychooser;
+  protected NumberGenerator fieldchooser;
+  protected AcknowledgedCounterGenerator transactioninsertkeysequence;
+  protected NumberGenerator scanlength;
+  protected boolean orderedinserts;
+  protected long fieldcount;
+  protected long recordcount;
+  protected int zeropadding;
+  protected int insertionRetryLimit;
+  protected int insertionRetryInterval;
 
-  DiscreteGenerator operationchooser;
-
-  NumberGenerator keychooser;
-
-  NumberGenerator fieldchooser;
-
-  AcknowledgedCounterGenerator transactioninsertkeysequence;
-
-  NumberGenerator scanlength;
-
-  boolean orderedinserts;
-
-  int recordcount;
-  int zeropadding;
-
-  int insertionRetryLimit;
-  int insertionRetryInterval;
-
-  private Measurements _measurements = Measurements.getMeasurements();
+  private Measurements measurements = Measurements.getMeasurements();
 
   protected static NumberGenerator getFieldLengthGenerator(Properties p) throws WorkloadException {
     NumberGenerator fieldlengthgenerator;
@@ -364,7 +333,7 @@ public class CoreWorkload extends Workload {
     if (fieldlengthdistribution.compareTo("constant") == 0) {
       fieldlengthgenerator = new ConstantIntegerGenerator(fieldlength);
     } else if (fieldlengthdistribution.compareTo("uniform") == 0) {
-      fieldlengthgenerator = new UniformIntegerGenerator(1, fieldlength);
+      fieldlengthgenerator = new UniformLongGenerator(1, fieldlength);
     } else if (fieldlengthdistribution.compareTo("zipfian") == 0) {
       fieldlengthgenerator = new ZipfianGenerator(1, fieldlength);
     } else if (fieldlengthdistribution.compareTo("histogram") == 0) {
@@ -390,15 +359,15 @@ public class CoreWorkload extends Workload {
     table = p.getProperty(TABLENAME_PROPERTY, TABLENAME_PROPERTY_DEFAULT);
 
     fieldcount =
-        Integer.parseInt(p.getProperty(FIELD_COUNT_PROPERTY, FIELD_COUNT_PROPERTY_DEFAULT));
-    fieldnames = new ArrayList<String>();
+        Long.parseLong(p.getProperty(FIELD_COUNT_PROPERTY, FIELD_COUNT_PROPERTY_DEFAULT));
+    fieldnames = new ArrayList<>();
     for (int i = 0; i < fieldcount; i++) {
       fieldnames.add("field" + i);
     }
     fieldlengthgenerator = CoreWorkload.getFieldLengthGenerator(p);
-    
+
     recordcount =
-        Integer.parseInt(p.getProperty(Client.RECORD_COUNT_PROPERTY, Client.DEFAULT_RECORD_COUNT));
+        Long.parseLong(p.getProperty(Client.RECORD_COUNT_PROPERTY, Client.DEFAULT_RECORD_COUNT));
     if (recordcount == 0) {
       recordcount = Integer.MAX_VALUE;
     }
@@ -409,9 +378,9 @@ public class CoreWorkload extends Workload {
     String scanlengthdistrib =
         p.getProperty(SCAN_LENGTH_DISTRIBUTION_PROPERTY, SCAN_LENGTH_DISTRIBUTION_PROPERTY_DEFAULT);
 
-    int insertstart =
-        Integer.parseInt(p.getProperty(INSERT_START_PROPERTY, INSERT_START_PROPERTY_DEFAULT));
-    int insertcount =
+    long insertstart =
+        Long.parseLong(p.getProperty(INSERT_START_PROPERTY, INSERT_START_PROPERTY_DEFAULT));
+    long insertcount=
         Integer.parseInt(p.getProperty(INSERT_COUNT_PROPERTY, String.valueOf(recordcount - insertstart)));
     // Confirm valid values for insertstart and insertcount in relation to recordcount
     if (recordcount < (insertstart + insertcount)) {
@@ -432,8 +401,8 @@ public class CoreWorkload extends Workload {
     // Confirm that fieldlengthgenerator returns a constant if data
     // integrity check requested.
     if (dataintegrity && !(p.getProperty(
-          FIELD_LENGTH_DISTRIBUTION_PROPERTY,
-          FIELD_LENGTH_DISTRIBUTION_PROPERTY_DEFAULT)).equals("constant")) {
+        FIELD_LENGTH_DISTRIBUTION_PROPERTY,
+        FIELD_LENGTH_DISTRIBUTION_PROPERTY_DEFAULT)).equals("constant")) {
       System.err.println("Must have constant field size to check data integrity.");
       System.exit(-1);
     }
@@ -457,10 +426,10 @@ public class CoreWorkload extends Workload {
 
     transactioninsertkeysequence = new AcknowledgedCounterGenerator(recordcount);
     if (requestdistrib.compareTo("uniform") == 0) {
-      keychooser = new UniformIntegerGenerator(insertstart, insertstart + insertcount - 1);
+      keychooser = new UniformLongGenerator(insertstart, insertstart + insertcount - 1);
     } else if (requestdistrib.compareTo("sequential") == 0) {
       keychooser = new SequentialGenerator(insertstart, insertstart + insertcount - 1);
-    }else if (requestdistrib.compareTo("zipfian") == 0) {
+    } else if (requestdistrib.compareTo("zipfian") == 0) {
       // it does this by generating a random "next key" in part by taking the modulus over the
       // number of keys.
       // If the number of keys changes, this would shift the modulus, and we don't want that to
@@ -489,10 +458,10 @@ public class CoreWorkload extends Workload {
       throw new WorkloadException("Unknown request distribution \"" + requestdistrib + "\"");
     }
 
-    fieldchooser = new UniformIntegerGenerator(0, fieldcount - 1);
+    fieldchooser = new UniformLongGenerator(0, fieldcount - 1);
 
     if (scanlengthdistrib.compareTo("uniform") == 0) {
-      scanlength = new UniformIntegerGenerator(1, maxscanlength);
+      scanlength = new UniformLongGenerator(1, maxscanlength);
     } else if (scanlengthdistrib.compareTo("zipfian") == 0) {
       scanlength = new ZipfianGenerator(1, maxscanlength);
     } else {
@@ -506,14 +475,14 @@ public class CoreWorkload extends Workload {
         INSERTION_RETRY_INTERVAL, INSERTION_RETRY_INTERVAL_DEFAULT));
   }
 
-  public String buildKeyName(long keynum) {
+  protected String buildKeyName(long keynum) {
     if (!orderedinserts) {
       keynum = Utils.hash(keynum);
     }
     String value = Long.toString(keynum);
     int fill = zeropadding - value.length();
     String prekey = "user";
-    for(int i=0; i<fill; i++) {
+    for (int i = 0; i < fill; i++) {
       prekey += '0';
     }
     return prekey + value;
@@ -523,7 +492,7 @@ public class CoreWorkload extends Workload {
    * Builds a value for a randomly chosen field.
    */
   private HashMap<String, ByteIterator> buildSingleValue(String key) {
-    HashMap<String, ByteIterator> value = new HashMap<String, ByteIterator>();
+    HashMap<String, ByteIterator> value = new HashMap<>();
 
     String fieldkey = fieldnames.get(fieldchooser.nextValue().intValue());
     ByteIterator data;
@@ -542,7 +511,7 @@ public class CoreWorkload extends Workload {
    * Builds values for all fields.
    */
   private HashMap<String, ByteIterator> buildValues(String key) {
-    HashMap<String, ByteIterator> values = new HashMap<String, ByteIterator>();
+    HashMap<String, ByteIterator> values = new HashMap<>();
 
     for (String fieldkey : fieldnames) {
       ByteIterator data;
@@ -626,7 +595,12 @@ public class CoreWorkload extends Workload {
    */
   @Override
   public boolean doTransaction(DB db, Object threadstate) {
-    switch (operationchooser.nextString()) {
+    String operation = operationchooser.nextString();
+    if(operation == null) {
+      return false;
+    }
+
+    switch (operation) {
     case "READ":
       doTransactionRead(db);
       break;
@@ -641,7 +615,7 @@ public class CoreWorkload extends Workload {
       break;
     default:
       doTransactionReadModifyWrite(db);
-    } 
+    }
 
     return true;
   }
@@ -668,12 +642,12 @@ public class CoreWorkload extends Workload {
       verifyStatus = Status.ERROR;
     }
     long endTime = System.nanoTime();
-    _measurements.measure("VERIFY", (int) (endTime - startTime) / 1000);
-    _measurements.reportStatus("VERIFY", verifyStatus);
+    measurements.measure("VERIFY", (int) (endTime - startTime) / 1000);
+    measurements.reportStatus("VERIFY", verifyStatus);
   }
 
-  int nextKeynum() {
-    int keynum;
+  long nextKeynum() {
+    long keynum;
     if (keychooser instanceof ExponentialGenerator) {
       do {
         keynum = transactioninsertkeysequence.lastValue() - keychooser.nextValue().intValue();
@@ -688,7 +662,7 @@ public class CoreWorkload extends Workload {
 
   public void doTransactionRead(DB db) {
     // choose a random key
-    int keynum = nextKeynum();
+    long keynum = nextKeynum();
 
     String keyname = buildKeyName(keynum);
 
@@ -712,10 +686,10 @@ public class CoreWorkload extends Workload {
       verifyRow(keyname, cells);
     }
   }
-  
+
   public void doTransactionReadModifyWrite(DB db) {
     // choose a random key
-    int keynum = nextKeynum();
+    long keynum = nextKeynum();
 
     String keyname = buildKeyName(keynum);
 
@@ -744,7 +718,7 @@ public class CoreWorkload extends Workload {
     HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
 
 
-    long ist = _measurements.getIntendedtartTimeNs();
+    long ist = measurements.getIntendedtartTimeNs();
     long st = System.nanoTime();
     db.read(table, keyname, fields, cells);
 
@@ -756,13 +730,13 @@ public class CoreWorkload extends Workload {
       verifyRow(keyname, cells);
     }
 
-    _measurements.measure("READ-MODIFY-WRITE", (int) ((en - st) / 1000));
-    _measurements.measureIntended("READ-MODIFY-WRITE", (int) ((en - ist) / 1000));
+    measurements.measure("READ-MODIFY-WRITE", (int) ((en - st) / 1000));
+    measurements.measureIntended("READ-MODIFY-WRITE", (int) ((en - ist) / 1000));
   }
 
   public void doTransactionScan(DB db) {
     // choose a random key
-    int keynum = nextKeynum();
+    long keynum = nextKeynum();
 
     String startkeyname = buildKeyName(keynum);
 
@@ -784,7 +758,7 @@ public class CoreWorkload extends Workload {
 
   public void doTransactionUpdate(DB db) {
     // choose a random key
-    int keynum = nextKeynum();
+    long keynum = nextKeynum();
 
     String keyname = buildKeyName(keynum);
 
@@ -803,7 +777,7 @@ public class CoreWorkload extends Workload {
 
   public void doTransactionInsert(DB db) {
     // choose the next key
-    int keynum = transactioninsertkeysequence.nextValue();
+    long keynum = transactioninsertkeysequence.nextValue();
 
     try {
       String dbkey = buildKeyName(keynum);
@@ -820,11 +794,12 @@ public class CoreWorkload extends Workload {
    * Weights/proportions are read from the properties list and defaults are used
    * when values are not configured.
    * Current operations are "READ", "UPDATE", "INSERT", "SCAN" and "READMODIFYWRITE".
+   *
    * @param p The properties list to pull weights from.
    * @return A generator that can be used to determine the next operation to perform.
    * @throws IllegalArgumentException if the properties object was null.
    */
-  public static DiscreteGenerator createOperationGenerator(final Properties p) {
+  protected static DiscreteGenerator createOperationGenerator(final Properties p) {
     if (p == null) {
       throw new IllegalArgumentException("Properties object cannot be null");
     }
@@ -838,7 +813,7 @@ public class CoreWorkload extends Workload {
         p.getProperty(SCAN_PROPORTION_PROPERTY, SCAN_PROPORTION_PROPERTY_DEFAULT));
     final double readmodifywriteproportion = Double.parseDouble(p.getProperty(
         READMODIFYWRITE_PROPORTION_PROPERTY, READMODIFYWRITE_PROPORTION_PROPERTY_DEFAULT));
-    
+
     final DiscreteGenerator operationchooser = new DiscreteGenerator();
     if (readproportion > 0) {
       operationchooser.addValue(readproportion, "READ");

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010 Yahoo! Inc. All rights reserved.
+ * Copyright (c) 2010-2016 Yahoo! Inc., 2017 YCSB contributors All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License. You
@@ -42,6 +42,15 @@ public abstract class Workload {
   public static final String INSERT_START_PROPERTY_DEFAULT = "0";
   
   private volatile AtomicBoolean stopRequested = new AtomicBoolean(false);
+  
+  /** Operations available for a database. */
+  public enum Operation {
+    READ,
+    UPDATE,
+    INSERT,
+    SCAN,
+    DELETE
+  }
   
   /**
    * Initialize the scenario. Create any generators and other shared objects here.

@@ -364,7 +364,7 @@ public class CassandraCQLClient extends DB {
    */
   @Override
   public Status read(String table, String key, Set<String> fields,
-      HashMap<String, ByteIterator> result) {
+      Map<String, ByteIterator> result) {
 
     PreparedStatement ps;
 
@@ -547,7 +547,7 @@ public class CassandraCQLClient extends DB {
    */
   @Override
   public Status update(String table, String key,
-      HashMap<String, ByteIterator> values) {
+      Map<String, ByteIterator> values) {
     // Insert and updates provide the same functionality
     return insert(table, key, values);
   }
@@ -567,7 +567,7 @@ public class CassandraCQLClient extends DB {
    */
   @Override
   public Status insert(String table, String key,
-      HashMap<String, ByteIterator> values) {
+      Map<String, ByteIterator> values) {
 
     try {
       final int numValues = values.size();
@@ -576,12 +576,12 @@ public class CassandraCQLClient extends DB {
 
       // Add key
       vals[i++] = key;
-
       // Add fieldList
-      for (; i < fieldList.size(); i++) {
-        String field = fieldList.get(i);
+      for (int j=1; j < fieldList.size(); j++) {
+        String field = fieldList.get(j);
+        
         if (values.containsKey(field)) {
-          vals[i] = values.get(field).toString();
+          vals[i++] = values.get(field).toString();
         }
       }
 

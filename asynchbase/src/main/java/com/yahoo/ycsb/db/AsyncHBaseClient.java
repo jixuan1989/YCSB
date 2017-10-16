@@ -21,6 +21,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
@@ -38,6 +39,9 @@ import com.yahoo.ycsb.ByteArrayByteIterator;
 import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.Status;
+
+import static com.yahoo.ycsb.workloads.CoreWorkload.TABLENAME_PROPERTY;
+import static com.yahoo.ycsb.workloads.CoreWorkload.TABLENAME_PROPERTY_DEFAULT;
 
 /**
  * Alternative Java client for Apache HBase.
@@ -140,7 +144,7 @@ public class AsyncHBaseClient extends com.yahoo.ycsb.DB {
           // Terminate right now if table does not exist, since the client
           // will not propagate this error upstream once the workload
           // starts.
-          String table = com.yahoo.ycsb.workloads.CoreWorkload.table;
+          String table = getProperties().getProperty(TABLENAME_PROPERTY, TABLENAME_PROPERTY_DEFAULT);
           try {
             client.ensureTableExists(table).join(joinTimeout);
           } catch (InterruptedException e1) {
@@ -193,7 +197,7 @@ public class AsyncHBaseClient extends com.yahoo.ycsb.DB {
   
   @Override
   public Status read(String table, String key, Set<String> fields,
-      HashMap<String, ByteIterator> result) {
+                     Map<String, ByteIterator> result) {
     setTable(table);
     
     final GetRequest get = new GetRequest(
@@ -296,7 +300,7 @@ public class AsyncHBaseClient extends com.yahoo.ycsb.DB {
 
   @Override
   public Status update(String table, String key,
-      HashMap<String, ByteIterator> values) {
+                       Map<String, ByteIterator> values) {
     setTable(table);
     
     if (debug) {
@@ -344,7 +348,7 @@ public class AsyncHBaseClient extends com.yahoo.ycsb.DB {
 
   @Override
   public Status insert(String table, String key,
-      HashMap<String, ByteIterator> values) {
+                       Map<String, ByteIterator> values) {
     return update(table, key, values);
   }
 

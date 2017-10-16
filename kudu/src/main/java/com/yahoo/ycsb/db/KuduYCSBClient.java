@@ -32,11 +32,14 @@ import org.apache.kudu.client.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
+import static com.yahoo.ycsb.workloads.CoreWorkload.TABLENAME_PROPERTY;
+import static com.yahoo.ycsb.workloads.CoreWorkload.TABLENAME_PROPERTY_DEFAULT;
 import static org.apache.kudu.Type.STRING;
 import static org.apache.kudu.client.KuduPredicate.ComparisonOp.EQUAL;
 import static org.apache.kudu.client.KuduPredicate.ComparisonOp.GREATER_EQUAL;
@@ -80,7 +83,7 @@ public class KuduYCSBClient extends com.yahoo.ycsb.DB {
 
   @Override
   public void init() throws DBException {
-    String tableName = CoreWorkload.table;
+    String tableName = getProperties().getProperty(TABLENAME_PROPERTY, TABLENAME_PROPERTY_DEFAULT);
     initClient(tableName, getProperties());
     this.session = client.newSession();
     if (getProperties().getProperty(SYNC_OPS_OPT) != null
@@ -186,10 +189,8 @@ public class KuduYCSBClient extends com.yahoo.ycsb.DB {
   }
 
   @Override
-  public Status read(String table,
-                     String key,
-                     Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+  public Status read(String table, String key, Set<String> fields,
+                     Map<String, ByteIterator> result) {
     Vector<HashMap<String, ByteIterator>> results = new Vector<>();
     final Status status = scan(table, key, 1, fields, results);
     if (!status.equals(Status.OK)) {
@@ -270,7 +271,7 @@ public class KuduYCSBClient extends com.yahoo.ycsb.DB {
   }
 
   @Override
-  public Status update(String table, String key, HashMap<String, ByteIterator> values) {
+  public Status update(String table, String key, Map<String, ByteIterator> values) {
     Update update = this.kuduTable.newUpdate();
     PartialRow row = update.getRow();
     row.addString(KEY, key);
@@ -286,7 +287,7 @@ public class KuduYCSBClient extends com.yahoo.ycsb.DB {
   }
 
   @Override
-  public Status insert(String table, String key, HashMap<String, ByteIterator> values) {
+  public Status insert(String table, String key, Map<String, ByteIterator> values) {
     Insert insert = this.kuduTable.newInsert();
     PartialRow row = insert.getRow();
     row.addString(KEY, key);

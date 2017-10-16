@@ -21,7 +21,7 @@ LICENSE file.
   <parent>
     <groupId>com.yahoo.ycsb</groupId>
     <artifactId>root</artifactId>
-    <version>0.13.0-SNAPSHOT</version>
+    <version>0.14.0-SNAPSHOT</version>
   </parent>
   
   <artifactId>core</artifactId>
@@ -29,7 +29,6 @@ LICENSE file.
   <packaging>jar</packaging>
 
   <properties>
-     <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
      <jackson.api.version>1.9.4</jackson.api.version>
   </properties>
 
