@@ -49,6 +49,12 @@ LICENSE file.
       <version>${jackson.api.version}</version>
     </dependency>
     <dependency>
+	    <groupId>org.yaml</groupId>
+	      <artifactId>snakeyaml</artifactId>
+	      <version>1.11</version>
+	      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
       <version>6.1.1</version>
