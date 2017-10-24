@@ -23,21 +23,21 @@
 #   Request distribution: zipfian
 
 recordcount=1000
-operationcount=100000
+operationcount=10000
 workload=com.yahoo.ycsb.workloads.CoreWorkload
 
-readallfields=false
+readallfields=true
 
-readproportion=0.3
-updateproportion=0.3
-scanproportion=0.4
-insertproportion=0
+readproportion=0.25
+updateproportion=0.25
+scanproportion=0.25
+insertproportion=0.25
 
 requestdistribution=zipfian
 
 hosts=127.0.0.1,127.0.0.1
 cassandra.keyspace=ycsb
 
-threadcount=20
+threadcount=5
 
 

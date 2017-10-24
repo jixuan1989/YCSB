@@ -106,10 +106,11 @@ public class CassandraCQLClient extends DB {
   private static Map<Integer, Map<Integer, PreparedStatement>> scanManyStatements;
 
   private boolean readallfields;
-
+  private boolean updateCommands;
+  
   private boolean debug = false;
   private boolean trace = false;
-
+  
   /**
    * Initialize any state for this DB. Called once per DB instance; there is one
    * DB instance per client thread.
@@ -150,7 +151,11 @@ public class CassandraCQLClient extends DB {
     readallfields = Boolean.parseBoolean(
       p.getProperty(CoreWorkload.READ_ALL_FIELDS_PROPERTY,
         CoreWorkload.READ_ALL_FIELDS_PROPERTY_DEFAULT));
-
+    
+    updateCommands = Double.parseDouble(p.getProperty(CoreWorkload.UPDATE_PROPORTION_PROPERTY,
+        CoreWorkload.UPDATE_PROPORTION_PROPERTY_DEFAULT))==0 ? false : true;
+        
+    
     trace = Boolean.valueOf(p.getProperty(TRACING_PROPERTY, TRACING_PROPERTY_DEFAULT));
 
     // Synchronized so that we only have a single
@@ -272,20 +277,21 @@ public class CassandraCQLClient extends DB {
           singleScanStatements.put(field, prepare(scanOneStmt, true));
         }
 
-        // Update - single
-        Insert updateOneStmt = QueryBuilder.insertInto(table).values(new String[] {YCSB_KEY, field },
-            new Object[] {QueryBuilder.bindMarker(), QueryBuilder.bindMarker() });
-
-        if (!updateStatements.containsKey(field)) {
-          updateStatements.put(field, prepare(updateOneStmt.getQueryString(), false));
-        }
-
         // Select and Scan many statements
         selectManyStatements.put(i, new ConcurrentHashMap<Integer, PreparedStatement>());
         scanManyStatements.put(i, new ConcurrentHashMap<Integer, PreparedStatement>());
       }
+      if(updateCommands) {
+        // Update - single
+        Insert updateOneStmt = QueryBuilder.insertInto(table).values(new String[] {YCSB_KEY, field },
+            new Object[] {QueryBuilder.bindMarker(), QueryBuilder.bindMarker() });
+        if (!updateStatements.containsKey(field)) {
+          updateStatements.put(field, prepare(updateOneStmt.getQueryString(), false));
+        }
+      }
+      
     }
-
+    
     // Prepare insert and update all
     insertStatement = prepare(is.getQueryString(), false);
 
@@ -542,7 +548,7 @@ public class CassandraCQLClient extends DB {
   public Status update(String table, String key,
       Map<String, ByteIterator> values) {
     // Insert and updates provide the same functionality
-    return insert(table, key, values);
+    return internalInsert(table, key, values, updateStatements.get(values.keySet().iterator().next()));
   }
 
   /**
@@ -561,6 +567,11 @@ public class CassandraCQLClient extends DB {
   @Override
   public Status insert(String table, String key,
       Map<String, ByteIterator> values) {
+    return internalInsert(table, key, values, insertStatement);
+  }
+
+  private Status internalInsert(String table, String key,
+      Map<String, ByteIterator> values, PreparedStatement statement) {
 
     try {
       final int numValues = values.size();
@@ -577,11 +588,9 @@ public class CassandraCQLClient extends DB {
           vals[i++] = values.get(field).toString();
         }
       }
-
+      
       // If there is one value, this is actually an update
-      BoundStatement bs = (numValues == 1 ?
-               updateStatements.get(values.keySet().iterator().next()) :
-               insertStatement).bind(vals);
+      BoundStatement bs = statement.bind(vals);
 
       if (trace) {
         bs.enableTracing();
@@ -598,8 +607,8 @@ public class CassandraCQLClient extends DB {
     }
 
     return Status.ERROR;
-  }
-
+  }  
+  
   /**
    * Delete a record from the database.
    *
