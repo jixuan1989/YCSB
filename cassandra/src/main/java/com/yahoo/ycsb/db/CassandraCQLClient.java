@@ -153,7 +153,7 @@ public class CassandraCQLClient extends DB {
         CoreWorkload.READ_ALL_FIELDS_PROPERTY_DEFAULT));
     
     updateCommands = Double.parseDouble(p.getProperty(CoreWorkload.UPDATE_PROPORTION_PROPERTY,
-        CoreWorkload.UPDATE_PROPORTION_PROPERTY_DEFAULT))==0 ? false : true;
+        CoreWorkload.UPDATE_PROPORTION_PROPERTY_DEFAULT))!=0;
         
     
     trace = Boolean.valueOf(p.getProperty(TRACING_PROPERTY, TRACING_PROPERTY_DEFAULT));
